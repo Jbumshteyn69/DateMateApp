@@ -216,7 +216,46 @@
       }
       document.getElementById('auth-container').style.display = 'none';
       displayProfile();
-      connectWebSocket(email);
+      function connectWebSocket(email) {
+  socket = new WebSocket('ws://localhost:8080');
+
+  socket.onopen = function() {
+    console.log('WebSocket connected');
+    socket.send(JSON.stringify({ type: 'join', email: email }));
+  };
+
+  socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'chatMessage') {
+      if (currentChatUser && data.sender === currentChatUser.email) {
+        document.getElementById('chat-box').innerHTML += `<p>${data.sender}: ${data.message}</p>`;
+      }
+    }
+
+    if (data.type === 'userList') {
+      displayUsers(data.users);
+    }
+  };
+
+  socket.onclose = function() {
+    console.log('WebSocket disconnected');
+  };
+}
+
+function displayUsers(users) {
+  const list = document.getElementById('user-list');
+  list.innerHTML = '';
+
+  users.forEach(email => {
+    if (email !== currentUser.email) {
+      const div = document.createElement('div');
+      div.innerHTML = `<p>${email} <button onclick="startChat('${email}')">Chat</button> <button onclick="startVideoChat('${email}')">Video Chat</button></p>`;
+      list.appendChild(div);
+    }
+  });
+}
+;
     }
 
     function connectWebSocket(email) {
